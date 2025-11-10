@@ -215,6 +215,7 @@ public class SharedConfig {
     public static boolean pushStatSent;
     public static byte[] pushAuthKey;
     public static byte[] pushAuthKeyId;
+    public static boolean forceForumTabs;
 
     public static String directShareHash;
 
@@ -305,9 +306,11 @@ public class SharedConfig {
     public static boolean playOrderReversed;
     public static boolean hasCameraCache;
     public static boolean showNotificationsForAllAccounts = true;
+    public static boolean debugVideoQualities = false;
     public static int repeatMode;
     public static boolean allowBigEmoji;
     public static boolean useSystemEmoji;
+    public static boolean useSystemBoldFont;
     public static int fontSize = 16;
     public static boolean fontSizeIsDefault;
     public static int bubbleRadius = 17;
@@ -318,7 +321,6 @@ public class SharedConfig {
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
     public static int callEncryptionHintDisplayedCount;
-    public static boolean botTabs3DEffect;
 
     public static TLRPC.TL_help_appUpdate pendingAppUpdate;
     public static int pendingAppUpdateBuildVersion;
@@ -605,6 +607,11 @@ public class SharedConfig {
             ivFontSize = preferences.getInt("iv_font_size", fontSize);
             allowBigEmoji = preferences.getBoolean("allowBigEmoji", true);
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
+            useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
+            forceForumTabs = preferences.getBoolean("forceForumTabs", false);
+            if (useSystemBoldFont) {
+                AndroidUtilities.mediumTypeface = null;
+            }
             streamMedia = preferences.getBoolean("streamMedia", true);
             saveStreamMedia = preferences.getBoolean("saveStreamMedia", true);
             pauseMusicOnRecord = preferences.getBoolean("pauseMusicOnRecord", true);
@@ -662,7 +669,7 @@ public class SharedConfig {
             photoViewerBlur = preferences.getBoolean("photoViewerBlur", true);
             multipleReactionsPromoShowed = preferences.getBoolean("multipleReactionsPromoShowed", false);
             callEncryptionHintDisplayedCount = preferences.getInt("callEncryptionHintDisplayedCount", 0);
-            botTabs3DEffect = preferences.getBoolean("botTabs3DEffect", true);
+            debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
 
             loadDebugConfig(preferences);
 
@@ -670,14 +677,6 @@ public class SharedConfig {
             showNotificationsForAllAccounts = preferences.getBoolean("AllAccounts", true);
 
             configLoaded = true;
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && debugWebView) {
-                    WebView.setWebContentsDebuggingEnabled(true);
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
         }
     }
 
@@ -804,7 +803,7 @@ public class SharedConfig {
     }
 
     // returns a >= b
-    private static boolean versionBiggerOrEqual(String a, String b) {
+    public static boolean versionBiggerOrEqual(String a, String b) {
         String[] partsA = a.split("\\.");
         String[] partsB = b.split("\\.");
         for (int i = 0; i < Math.min(partsA.length, partsB.length); ++i) {
@@ -1092,13 +1091,6 @@ public class SharedConfig {
         editor.apply();
     }
 
-    public static void setBotTabs3DEffect(boolean value) {
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("botTabs3DEffect", botTabs3DEffect = value);
-        editor.apply();
-    }
-
     public static void toggleLoopStickers() {
         LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_CHAT);
     }
@@ -1108,6 +1100,23 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("allowBigEmoji", allowBigEmoji);
+        editor.apply();
+    }
+
+    public static void toggleUseSystemBoldFont() {
+        useSystemBoldFont = !useSystemBoldFont;
+        AndroidUtilities.mediumTypeface = null;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("useSystemBoldFont", useSystemBoldFont);
+        editor.apply();
+    }
+
+    public static void toggleForceForumTabs() {
+        forceForumTabs = !forceForumTabs;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("forceForumTabs", forceForumTabs);
         editor.apply();
     }
 
@@ -1262,6 +1271,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("adaptableBrowser", adaptableColorInBrowser);
+        editor.apply();
+    }
+
+    public static void toggleDebugVideoQualities() {
+        debugVideoQualities = !debugVideoQualities;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("debugVideoQualities", debugVideoQualities);
         editor.apply();
     }
 

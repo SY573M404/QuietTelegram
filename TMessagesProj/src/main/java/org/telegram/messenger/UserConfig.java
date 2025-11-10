@@ -14,16 +14,12 @@ import android.os.SystemClock;
 import android.util.Base64;
 import android.util.LongSparseArray;
 
-import com.google.android.exoplayer2.util.Log;
-
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 
 public class UserConfig extends BaseController {
 
@@ -43,7 +39,7 @@ public class UserConfig extends BaseController {
     public int lastHintsSyncTime;
     public boolean draftsLoaded;
     public boolean unreadDialogsLoaded = true;
-    public TLRPC.TL_account_tmpPassword tmpPassword;
+    public TL_account.tmpPassword tmpPassword;
     public int ratingLoadTime;
     public int botRatingLoadTime;
     public int webappRatingLoadTime;
@@ -70,9 +66,11 @@ public class UserConfig extends BaseController {
     public long autoDownloadConfigLoadTime;
 
     public String premiumGiftsStickerPack;
+    public String premiumTonStickerPack;
     public String genericAnimationsStickerPack;
     public String defaultTopicIcons;
     public long lastUpdatedPremiumGiftsStickerPack;
+    public long lastUpdatedTonGiftsStickerPack;
     public long lastUpdatedGenericAnimations;
     public long lastUpdatedDefaultTopicIcons;
 
@@ -266,7 +264,7 @@ public class UserConfig extends BaseController {
     }
 
     private void checkPremiumSelf(TLRPC.User oldUser, TLRPC.User newUser) {
-        if (oldUser == null || (newUser != null && oldUser.premium != newUser.premium)) {
+        if (oldUser != null && newUser != null && oldUser.premium != newUser.premium) {
             AndroidUtilities.runOnUIThread(() -> {
                 getMessagesController().updatePremium(newUser.premium);
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
@@ -275,6 +273,12 @@ public class UserConfig extends BaseController {
                 getMediaDataController().loadPremiumPromo(false);
                 getMediaDataController().loadReactions(false, null);
                 getMessagesController().getStoriesController().invalidateStoryLimit();
+            });
+        } else if (oldUser == null) {
+            AndroidUtilities.runOnUIThread(() -> {
+                getMessagesController().updatePremium(newUser.premium);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
+                getMediaDataController().loadPremiumPromo(true);
             });
         }
     }
@@ -347,7 +351,7 @@ public class UserConfig extends BaseController {
                 byte[] bytes = Base64.decode(string, Base64.DEFAULT);
                 if (bytes != null) {
                     SerializedData data = new SerializedData(bytes);
-                    tmpPassword = TLRPC.TL_account_tmpPassword.TLdeserialize(data, data.readInt32(false), false);
+                    tmpPassword = TL_account.tmpPassword.TLdeserialize(data, data.readInt32(false), false);
                     data.cleanup();
                 }
             }
@@ -553,10 +557,11 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPremium() {
-        if (currentUser == null) {
+        TLRPC.User user = currentUser;
+        if (user == null) {
             return false;
         }
-        return currentUser.premium;
+        return user.premium;
     }
 
     public Long getEmojiStatus() {
@@ -596,5 +601,14 @@ public class UserConfig extends BaseController {
     public void clearFilters() {
         getPreferences().edit().remove("filtersLoaded").apply();
         filtersLoaded = false;
+    }
+
+    public static int getProductionAccount() {
+        for (int i = -1; i < MAX_ACCOUNT_COUNT; ++i) {
+            final int account = i < 0 ? selectedAccount : i;
+            if (getInstance(account).isClientActivated() && !ConnectionsManager.getInstance(account).isTestBackend())
+                return account;
+        }
+        return selectedAccount;
     }
 }

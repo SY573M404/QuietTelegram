@@ -209,7 +209,8 @@
         <activity
             android:name="org.telegram.ui.LaunchActivity"
             android:theme="@style/Theme.TMessages.Start"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode|smallestScreenSize|screenLayout"
+            android:supportsPictureInPicture="true"
             android:hardwareAccelerated="@bool/useHardwareAcceleration"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
@@ -402,6 +403,14 @@
         </receiver>
 
         <receiver
+            android:name=".CopyCodeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.telegram.messenger.ACTION_COPY_CODE"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".NotificationsDisabledReceiver"
             android:exported="false">
             <intent-filter>
@@ -582,6 +591,8 @@ e            <intent-filter>
 
         <receiver android:name=".voip.VoIPActionsReceiver" android:exported="false"/>
 
+        <receiver android:name=".ShortcutResultReceiver" android:exported="false"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -665,6 +676,9 @@ e            <intent-filter>
         <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="face,barcode" />
 
         <meta-data android:name="android.max_aspect" android:value="2.5" />
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="org.telegram.messenger.chromecast.ChromecastOptionsProvider" />
 
     </application>
 

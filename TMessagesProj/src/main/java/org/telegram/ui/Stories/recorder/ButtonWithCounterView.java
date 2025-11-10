@@ -12,8 +12,10 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.OvershootInterpolator;
@@ -46,10 +48,23 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
     private float countAlpha;
     private final AnimatedFloat countAlphaAnimated = new AnimatedFloat(350, CubicBezierInterpolator.EASE_OUT_QUINT);
     public final View rippleView;
-    private final boolean filled;
+    private boolean filled;
 
     public ButtonWithCounterView(Context context, Theme.ResourcesProvider resourcesProvider) {
         this(context, true, resourcesProvider);
+    }
+
+    public void setFilled(boolean filled) {
+        if (this.filled == filled) return;
+        this.filled = filled;
+        if (filled) {
+            setBackground(Theme.createRoundRectDrawable(dp(8), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
+            text.setTypeface(AndroidUtilities.bold());
+        } else {
+            setBackground(null);
+            text.setTypeface(null);
+        }
+        updateColors();
     }
 
     public ButtonWithCounterView(Context context, boolean filled, Theme.ResourcesProvider resourcesProvider) {
@@ -97,6 +112,14 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
         updateColors();
     }
 
+    public void setTextHacks(boolean splitByWords, boolean preserveIndex, boolean startFromEnd, boolean enforceByLetter) {
+        text.setHacks(splitByWords, preserveIndex, startFromEnd, enforceByLetter);
+    }
+
+    public void setSubTextHacks(boolean splitByWords, boolean preserveIndex, boolean startFromEnd, boolean enforceByLetter) {
+        subText.setHacks(splitByWords, preserveIndex, startFromEnd, enforceByLetter);
+    }
+
     protected boolean subTextSplitToWords() {
         return true;
     }
@@ -109,6 +132,11 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
         if (filled) {
             setBackground(Theme.createRoundRectDrawable(dp(8), color));
         }
+    }
+
+    public void updateColors(Theme.ResourcesProvider resourcesProvider) {
+        this.resourcesProvider = resourcesProvider;
+        updateColors();
     }
 
     public void updateColors() {
@@ -181,6 +209,10 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
         text.setText(newText, animated, moveDown);
         setContentDescription(newText);
         invalidate();
+    }
+
+    public TextPaint getTextPaint() {
+        return text.getPaint();
     }
 
     private float subTextT = 0f;
@@ -557,5 +589,13 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
         } else {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (filled && isClickable() && getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+        }
+        return super.onInterceptTouchEvent(ev);
     }
 }
